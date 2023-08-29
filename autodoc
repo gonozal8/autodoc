@@ -4,7 +4,9 @@
 # "host/server documentation"
 # files
 #
-# v0.4, CHP, 2023-08-17
+# v0.4, CHP, 2023-08-29
+# * optionally, inline "single-line outputs" into index document
+# * fix size/type detection for /proc files
 # v0.3, CHP, 2023-08-12
 # * include autodoc.d scripts
 # * beautify HTML index.html output
@@ -55,6 +57,8 @@ options:
                             (default e.g. "$DST")
   --keep | -k               keep generated documents after packaging
   --no-keep | -K
+  --inline | -i  <num>      inline output of <num> lines at most
+                            (default: $OPT_INCLUDE)
   --browse | -b             browse generated documentation (implies --keep)
 
 storage options:
@@ -212,10 +216,12 @@ while read LINE; do
     LINK=$(basename "$A")
     PERMS=$(stat --format="%a %U:%G" "$A")
     MTIME=$(date -d @$(stat --format="%Y" "$A") +"%Y-%m-%d %H:%M")
-    SIZE=$(stat --printf="%s" "$A")
-    TYPE=$(file --mime-type --brief "$A")
+    # SIZE and TYPE determination does not work for /proc filesystem.
+    # let's just use the copied file to be on the safe side.
+    SIZE=$(stat --printf="%s" "$LINK")
+    TYPE=$(file --mime-type --brief "$LINK")
     if [ "${TYPE:0:4}" = "text" ]; then
-      LINES=$(wc -l "$A" | cut -f1 -d " ")
+      LINES=$(wc -l "$LINK" | cut -f1 -d " ")
     else
       LINES=0
     fi

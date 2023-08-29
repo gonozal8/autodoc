@@ -70,6 +70,10 @@ At the moment, there's no other way to obtain super-user privileges, if the data
 /etc/yum.repos.d/
 ```
 
+### Security Considerations
+
+The configuration file contains (shell) commands to be executed during the autodoc process. Do not allow any unauthorized user to tamper with the file. It could lead to involuntary information disclosure or data manipulation.
+
 ## Archive Handling
 
 You'll probably want to automate the handling of Autodoc archives.
