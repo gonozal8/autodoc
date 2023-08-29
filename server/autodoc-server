@@ -1,0 +1,75 @@
+#!/usr/bin/python3
+from flask import Flask, request
+import os
+import sys
+from datetime import datetime
+import argparse
+import subprocess
+
+app = Flask(__name__)
+
+UPLOAD_FOLDER = "/var/tmp/autodoc-server"
+DEFAULT_PORT = 8000
+MAX_BYTES=1000000
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Web service for storing Autodoc uploads")
+    parser.add_argument("-p", "--port", type=int, default=DEFAULT_PORT, help=f"Listening port number (default: %(default)s)")
+    parser.add_argument("-d", "--directory", default=UPLOAD_FOLDER, help=f"Upload directory (default: %(default)s)")
+    parser.add_argument("-H", "--host", default="0.0.0.0", help=f"Listening IP (default: %(default)s)")
+    parser.add_argument("-x", "--extract", action='store_true', help=f"extract uploaded archives (default: %(default)s)")
+    return parser.parse_args()
+
+@app.route('/', methods=['PUT', 'POST'])
+def upload_data():
+    if request.method in ['PUT', 'POST']:
+        ip_address = request.remote_addr.replace(':', '_') # Replace ':' with '_' for IPv6 addresses
+        timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
+        file_name = os.path.join(args.directory, ip_address, timestamp)
+        print(f"Destination file name {file_name}")
+
+        data = request.get_data()
+        size = len(data)
+        if size == 0:
+          return "Error: Uploaded data size is zero\n", 400
+        if size > MAX_BYTES:
+          print(f"Maximum data size exceeded: {size} > {MAX_BYTES}. Ignoring upload.")
+          return "Error: Maximum data size exceeded\n", 400
+
+        dir=os.path.dirname(file_name)
+        if not os.path.exists(dir):
+          try:
+            os.makedirs(dir)
+          except Exception as e:
+            print(f"Error creating directory {dir}: {str(e)}")
+            return "Internal Server Error\n", 500
+    
+        try:
+          with open(file_name, 'wb') as file:
+            file.write(data)
+        except Exception as e:
+          print(f"Error writing data to {file_name}: {str(e)}")
+          return "Internal Server Error\n", 500
+
+        file_size = os.path.getsize(file_name)
+        print(f"Stored archive from {ip_address} to {file_name} size {file_size} bytes")
+
+        if args.extract:
+          try:
+            extraction_directory=f"{file_name}.d"
+            os.makedirs(extraction_directory)
+            subprocess.run(["tar", "-xaf", file_name, "-C", extraction_directory])
+            print(f"Extracted archive {file_name} to {extraction_directory}")
+          except Exception as e:
+            print(f"Error extracting archive to {extraction_directory}: {str(e)}")
+            
+        return "Upload successful\n", 200
+    else:
+        return "Unsupported request method\n", 405
+
+if __name__ == '__main__':
+  args = parse_args()
+  if not os.path.exists(args.directory):
+    print(f"Upload directory {args.directory} does not exist. Exiting.")
+    sys.exit(1)
+  app.run(host=args.host, port=args.port)

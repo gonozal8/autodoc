@@ -1,0 +1,18 @@
+[Unit]
+Description=Autodoc Archive Service
+#Documentation=man:autodoc-server(8)
+After=network.target
+#ConditionPathExists=!/etc/ssh/sshd_not_to_be_run
+
+[Service]
+#EnvironmentFile=-/etc/default/autodoc-server
+#ExecStartPre=
+ExecStart=/usr/sbin/autodoc-server -x
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=on-failure
+#RestartPreventExitStatus=255
+Type=notify
+
+[Install]
+WantedBy=multi-user.target
