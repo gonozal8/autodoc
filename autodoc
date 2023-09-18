@@ -25,11 +25,13 @@ MYCONF="${MYPATH}.conf"
 MYSCRIPTS="${MYPATH}.d"
 
 # temporary storage directory for results
-MYOUT=/var/tmp/$MYNAME
+# (this needs to be a (sub)directory used by Autodoc only.
+# do not use a system-wide temp directory e.g. /tmp)
+MYOUT="/var/tmp/$MYNAME"
 
 # final destination for results
 #URL=https://localhost/autodoc
-DST=/var/tmp/$MYNAME.$(date +%Y-%m-%d).tar.bz2
+DST="/var/tmp/$MYNAME.$(date +%Y-%m-%d).tar.bz2"
 
 OPT_INCLUDE=1
 OPT_BROWSE=0
@@ -107,6 +109,12 @@ function ProcessCommand () {
     fi
 }
 
+#
+# main()
+#
+
+# parse command line arguments
+
 while [ -n "$1" ]; do
   if [ "$1" = "--help" -o "$1" = "-h" ]; then
     Help 0
@@ -148,6 +156,8 @@ while [ -n "$1" ]; do
   shift
 done
 
+# preparations
+
 if [ ! -f "$MYCONF" ]; then
   echo "error: no such configuration file \"$MYCONF\". aborting."
   exit 1
@@ -158,9 +168,15 @@ if [ $OPT_INCLUDE -ne 0 -a ! -x "$RECODE" ]; then
   OPT_INCLUDE=0
 fi
 
-install -d $MYOUT
+install -d "$MYOUT"
 Debug MYOUT $MYOUT
-cd $MYOUT || exit 1
+cd "$MYOUT" || exit 1
+
+#
+# generate Autodocs, write index file
+#
+
+# index header
 
 INDEX=index.html
 cat > $INDEX <<-EOF
@@ -179,6 +195,8 @@ cat > $INDEX <<-EOF
 <hr/>
 <ul>
 EOF
+
+# read and process Autodoc config, retrieve data
 
 IFS="
 "
@@ -208,7 +226,7 @@ while read LINE; do
     SIZE=$(stat --printf="%s" "$OUT")
     echo "<li><code class=\"filename\">$A</code> (archive: $SIZE bytes)" >> $INDEX
   elif [ -x "$A" ]; then
-    # executable found: store its output
+    # executable found: execute and store its output
     ProcessCommand "$LINE"
   elif [ -r "$A" ]; then
     # file found: store a copy
@@ -231,13 +249,12 @@ while read LINE; do
       cat -- "$A" | recode ascii..html >> $INDEX
       echo "</CODE>" >> $INDEX
     fi
-
+  else
+    echo "warning: no such readable file or unknown directive: $A" 1>&2
   fi
 done < $MYCONF
 
-#
 # process any additional Autodoc scripts in autodoc.d directory
-#
 Debug MYSCRIPTS $MYSCRIPTS
 if [ -n "$MYSCRIPTS" -a -d "$MYSCRIPTS" ]; then
   for F in $(find "$MYSCRIPTS" -type f); do
@@ -250,6 +267,7 @@ if [ -n "$MYSCRIPTS" -a -d "$MYSCRIPTS" ]; then
   done
 fi
 
+# index footer
 echo "</ul><hr/>Created by $MYNAME on $MYTIME</body></html>" >> $INDEX
 
 #
