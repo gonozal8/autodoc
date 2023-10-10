@@ -5,8 +5,13 @@ import sys
 from datetime import datetime
 import argparse
 import subprocess
+from OpenSSL import SSL
 
 app = Flask(__name__)
+
+#context = SSL.Context(SSL.SSLv23_METHOD)
+#context.use_privatekey_file('key.pem')
+#context.use_certificate_file('cert.pem')
 
 UPLOAD_FOLDER = "/var/tmp/autodoc-server"
 DEFAULT_PORT = 8000
@@ -17,7 +22,10 @@ def parse_args():
     parser.add_argument("-p", "--port", type=int, default=DEFAULT_PORT, help=f"Listening port number (default: %(default)s)")
     parser.add_argument("-d", "--directory", default=UPLOAD_FOLDER, help=f"Upload directory (default: %(default)s)")
     parser.add_argument("-H", "--host", default="0.0.0.0", help=f"Listening IP (default: %(default)s)")
+    parser.add_argument("-l", "--limit", type=int, default=MAX_BYTES, help=f"maximum upload size (default: %(default)s bytes)")
     parser.add_argument("-x", "--extract", action='store_true', help=f"extract uploaded archives (default: %(default)s)")
+    parser.add_argument('--ssl', action='store_true', help='use HTTPS (default: HTTP)')
+    parser.add_argument('--get', default=False, action='store_true', help='allow GET requests (default: %(default)s)')
     return parser.parse_args()
 
 @app.route('/', methods=['PUT', 'POST'])
@@ -32,8 +40,8 @@ def upload_data():
         size = len(data)
         if size == 0:
           return "Error: Uploaded data size is zero\n", 400
-        if size > MAX_BYTES:
-          print(f"Maximum data size exceeded: {size} > {MAX_BYTES}. Ignoring upload.")
+        if size > args.limit:
+          print(f"Maximum data size exceeded: {size} > {args.limit}. Ignoring upload.")
           return "Error: Maximum data size exceeded\n", 400
 
         dir=os.path.dirname(file_name)
@@ -59,7 +67,7 @@ def upload_data():
             extraction_directory=f"{file_name}.d"
             os.makedirs(extraction_directory)
             subprocess.run(["tar", "-xaf", file_name, "-C", extraction_directory])
-            print(f"Extracted archive {file_name} to {extraction_directory}")
+            print(f"Extracted archive {file_name} to {extraction_directory}/")
           except Exception as e:
             print(f"Error extracting archive to {extraction_directory}: {str(e)}")
             
@@ -69,7 +77,14 @@ def upload_data():
 
 if __name__ == '__main__':
   args = parse_args()
+
   if not os.path.exists(args.directory):
     print(f"Upload directory {args.directory} does not exist. Exiting.")
     sys.exit(1)
-  app.run(host=args.host, port=args.port)
+
+  if args.ssl:
+    context='adhoc'
+  else:
+    context=Null
+
+  app.run(ssl_context=context, host=args.host, port=args.port)
