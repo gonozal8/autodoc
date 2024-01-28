@@ -85,6 +85,6 @@ if __name__ == '__main__':
   if args.ssl:
     context='adhoc'
   else:
-    context=Null
+    context=None
 
   app.run(ssl_context=context, host=args.host, port=args.port)
