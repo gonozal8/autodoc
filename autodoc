@@ -19,8 +19,8 @@
 
 MYHOST=$(hostname -s)
 MYTIME=$(date +"%Y-%m-%d %H:%M:%S")
-MYNAME=$(basename $0)
-MYPATH=$(readlink -f $0)
+MYNAME=$(basename "$0")
+MYPATH=$(readlink -f "$0")
 MYCONF="${MYPATH}.conf"
 MYSCRIPTS="${MYPATH}.d"
 
@@ -74,25 +74,29 @@ EOF
 }
 
 function Debug () {
-  [ $OPT_DEBUG -ne 0 ] && echo debug: $*
+  [ $OPT_DEBUG -ne 0 ] && echo debug: "$*"
 }
 
 # process a single command
 function ProcessCommand () {
-    local A=$(echo "$1" | cut -f1 -d " ")
-    local LINE="$1"
+    local A
+    local LINE
+    local OUTPUT
+
+    A=$(echo "$1" | cut -f1 -d " ")
+    LINE="$1"
     # define output file name, replacing illegal character(s)
-    local OUTPUT=$(echo "$LINE" | sed -e 's#/#_#g').txt
-    #local OUTPUT=$(basename "$A")
+    OUTPUT=$(echo "$LINE" | sed -e 's#/#_#g').txt
+    #OUTPUT=$(basename "$A")
     Debug "OUTPUT ${OUTPUT}"
     # shortened label for display purposes (strip common directory names)
     LABEL=$(echo "$LINE" | sed -e 's#^/usr/s\?bin/##')
 
     TIME1=$(date +%s)
-    eval $LINE > $OUTPUT 2>&1
+    eval "$LINE" > "$OUTPUT" 2>&1
     RESULT=$?
     TIME2=$(date +%s)
-    TIME=$(($TIME2 - $TIME1))
+    TIME=$((TIME2 - TIME1))
     SIZE=$(stat --printf="%s" "$OUTPUT")
     TYPE=$(file --mime-type --brief "$OUTPUT")
     if [ "${TYPE:0:4}" = "text" ]; then
@@ -102,7 +106,7 @@ function ProcessCommand () {
     fi
     
     echo "<li><a href=\"$OUTPUT\"><code class=\"command\">\$ $LABEL</code></a> (exit $RESULT, $TIME seconds, $SIZE bytes, $LINES lines)" >> $INDEX
-    if [ $OPT_INCLUDE -ne 0 -a $LINES -eq 1 ]; then
+    if [ $OPT_INCLUDE -ne 0 ] && [ "$LINES" -eq 1 ]; then
       echo "<br/><code class=\"output\">" >> $INDEX
       cat -- "$OUTPUT" | recode ascii..html >> $INDEX
       echo "</CODE>" >> $INDEX
@@ -116,37 +120,37 @@ function ProcessCommand () {
 # parse command line arguments
 
 while [ -n "$1" ]; do
-  if [ "$1" = "--help" -o "$1" = "-h" ]; then
+  if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     Help 0
-  elif [ "$1" = "--debug" -o "$1" = "-d" ]; then
+  elif [ "$1" = "--debug" ] || [ "$1" = "-d" ]; then
     OPT_DEBUG=1
-  elif [ "$1" =  "--browse" -o "$1" = -"b" ]; then
+  elif [ "$1" =  "--browse" ] || [ "$1" = -"b" ]; then
     OPT_BROWSE=1
     OPT_KEEP=1
-  elif [ "$1" = "--tag" -o "$1" = "-t" ]; then
+  elif [ "$1" = "--tag" ] || [ "$1" = "-t" ]; then
     shift
     TAG="$1"
-  elif [ "$1" = "--url" -o "$1" = "-u" ]; then
+  elif [ "$1" = "--url" ] || [ "$1" = "-u" ]; then
     shift
     URL="$1"
-  elif [ "$1" = "--keep" -o "$1" = "-k" ]; then
+  elif [ "$1" = "--keep" ] || [ "$1" = "-k" ]; then
     OPT_KEEP=1
-  elif [ "$1" = "--no-keep" -o "$1" = "-K" ]; then
+  elif [ "$1" = "--no-keep" ] || [ "$1" = "-K" ]; then
     OPT_KEEP=0
-  elif [ "$1" = "--directory" -o "$1" = "-d" ]; then
+  elif [ "$1" = "--directory" ] || [ "$1" = "-d" ]; then
     shift
-    if [ -n "$1" -a -d "$1" ]; then
+    if [ -n "$1" ] && [ -d "$1" ]; then
       DSTDIR="$1"
     else
       echo "error: no such destination directory \"$1\". aborting."
       exit 1
     fi
-  elif [ "$1" = "--conf" -o "$1" = "-c" ]; then
+  elif [ "$1" = "--conf" ] || [ "$1" = "-c" ]; then
     shift
     MYCONF="$1"
   elif [ "$1" = "-o-" ]; then
     DSTFILE=/dev/stdout
-  elif [ "$1" = "--output" -o "$1" = "-o" ]; then
+  elif [ "$1" = "--output" ] || [ "$1" = "-o" ]; then
     shift
     DSTFILE="$1"
     [ "$DSTFILE" = "-" ] && DSTFILE=/dev/stdout
@@ -163,13 +167,13 @@ if [ ! -f "$MYCONF" ]; then
   exit 1
 fi
 
-if [ $OPT_INCLUDE -ne 0 -a ! -x "$RECODE" ]; then
+if [ $OPT_INCLUDE -ne 0 ] && [ ! -x "$RECODE" ]; then
   echo "warning: recode binary not found. disabling includes." 1>&2
   OPT_INCLUDE=0
 fi
 
 install -d "$MYOUT"
-Debug MYOUT $MYOUT
+Debug MYOUT "$MYOUT"
 cd "$MYOUT" || exit 1
 
 #
@@ -201,9 +205,9 @@ EOF
 IFS="
 "
 while read LINE; do
-  A=$(echo $LINE | cut -f1 -d " ")
-  Debug LINE $LINE
-  Debug A $A
+  A=$(echo "$LINE" | cut -f1 -d " ")
+  Debug LINE "$LINE"
+  Debug A "$A"
 
   if [ "${LINE:0:2}" = "##" ]; then
     echo "</ul><h2>${LINE:2}</h2><ul>" >> $INDEX
@@ -233,7 +237,7 @@ while read LINE; do
     cp -p --force "$A" .
     LINK=$(basename "$A")
     PERMS=$(stat --format="%a %U:%G" "$A")
-    MTIME=$(date -d @$(stat --format="%Y" "$A") +"%Y-%m-%d %H:%M")
+    MTIME=$(date -d "@$(stat --format="%Y" "$A")" +"%Y-%m-%d %H:%M")
     # SIZE and TYPE determination does not work for /proc filesystem.
     # let's just use the copied file to be on the safe side.
     SIZE=$(stat --printf="%s" "$LINK")
@@ -244,19 +248,20 @@ while read LINE; do
       LINES=0
     fi
     echo "<li><a href=\"$LINK\"><code class=\"filename\">$A</code></a> ($MTIME, $PERMS, $SIZE bytes, $LINES lines)" >> $INDEX
-    if [ $OPT_INCLUDE -ne 0 -a $LINES -eq 1 ]; then
-      echo "<br/><code class=\"output\">" >> $INDEX
+    if [ $OPT_INCLUDE -ne 0 ] && [ "$LINES" -eq 1 ]; then
+      # shellcheck disable=SC2129
+      echo "<br/><code class=\"content\">" >> $INDEX
       cat -- "$A" | recode ascii..html >> $INDEX
       echo "</CODE>" >> $INDEX
     fi
   else
     echo "warning: no such readable file or unknown directive: $A" 1>&2
   fi
-done < $MYCONF
+done < "$MYCONF"
 
 # process any additional Autodoc scripts in autodoc.d directory
-Debug MYSCRIPTS $MYSCRIPTS
-if [ -n "$MYSCRIPTS" -a -d "$MYSCRIPTS" ]; then
+Debug MYSCRIPTS "$MYSCRIPTS"
+if [ -n "$MYSCRIPTS" ] && [ -d "$MYSCRIPTS" ]; then
   for F in $(find "$MYSCRIPTS" -type f); do
     if [ -x "$F" ]; then
       # skip current script if not tagged according to requested filter
@@ -275,14 +280,14 @@ echo "</ul><hr/>Created by $MYNAME on $MYTIME</body></html>" >> $INDEX
 #
 
 # open index of results
-if [ $OPT_BROWSE -ne 0 -a -r "$INDEX" ]; then
+if [ $OPT_BROWSE -ne 0 ] && [ -r "$INDEX" ]; then
   Debug "opening index of results"
   $BROWSER "$INDEX"
 fi
 
 # create archive from results
 MYARCH=$MYOUT.tar.bz2
-tar -caf $MYARCH -C $MYOUT .
+tar -caf "$MYARCH" -C "$MYOUT" .
 if [ $? -ne 0 ]; then
   echo "error: could not create data archive." 1>&2
   exit 1
@@ -291,11 +296,11 @@ fi
 # upload archive to web service/URL
 if [ -n "$URL" ]; then
   Debug "uploading data to $URL"
-  Debug MYARCH $MYARCH
-  ls -Flad $MYARCH
+  Debug MYARCH "$MYARCH"
+  ls -Flad "$MYARCH"
   curl -X POST \
   -H "host: $MYHOST" \
-  --data-binary @$MYARCH $URL
+  --data-binary @"$MYARCH" "$URL"
   if [ $? -ne 0 ]; then
     echo "error: data upload failed." 1>&2
   fi
@@ -305,7 +310,7 @@ fi
 if [ -n "$DST" ]; then
   if [ -d "$DST" ]; then
     Debug "storing data to \"$DST\""
-    cp -p $MYARCH $DST
+    cp -p "$MYARCH" "$DST"
     if [ $? -ne 0 ]; then
       echo "error: data storage failed." 1>&2
     fi
