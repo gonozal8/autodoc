@@ -110,11 +110,11 @@ function ProcessCommand () {
 		LINES=0
 	fi
 
-	echo "<li><a href=\"$OUTPUT\"><code class=\"command\">\$ $LABEL</code></a> (exit $RESULT, $TIME seconds, $SIZE bytes, $LINES lines)" >> $INDEX
+	echo "<li><a href=\"$OUTPUT\"><code class=\"command\">\$ $LABEL</code></a> (exit $RESULT, $TIME seconds, $SIZE bytes, $LINES lines)" >> "$INDEX"
 	if [ $OPT_INCLUDE -ne 0 ] && [ "$LINES" -eq 1 ]; then
-		echo "<br/><code class=\"output\">" >> $INDEX
-		cat -- "$OUTPUT" | recode ascii..html >> $INDEX
-		echo "</CODE>" >> $INDEX
+		echo "<br/><code class=\"output\">" >> "$INDEX"
+		cat -- "$OUTPUT" | recode ascii..html >> "$INDEX"
+		echo "</CODE>" >> "$INDEX"
 	fi
 }
 
@@ -236,7 +236,7 @@ EOF
 
 IFS="
 "
-while read LINE; do
+while read -r LINE; do
 	A=$(echo "$LINE" | cut -f1 -d " ")
 	Debug LINE "$LINE"
 	Debug A "$A"
