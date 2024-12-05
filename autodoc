@@ -22,6 +22,7 @@ MYTIME=$(date +"%Y-%m-%d %H:%M:%S")
 MYNAME=$(basename "$0")
 MYPATH=$(readlink -f "$0")
 MYCONF="${MYPATH}.conf"
+MYTEMPLATE="${MYPATH}.tpl"
 MYSCRIPTS="${MYPATH}.d"
 
 # temporary storage directory for results
@@ -31,7 +32,8 @@ MYOUT="/var/tmp/$MYNAME"
 
 # final destination for results
 #URL=https://localhost/autodoc
-DST="/var/tmp/$MYNAME.$(date +%Y-%m-%d).tar.bz2"
+#DSTFILE="/var/tmp/$MYNAME.$(date +%Y-%m-%d).tar.bz2"
+DSTFILE=""
 
 OPT_INCLUDE=1
 OPT_BROWSE=0
@@ -48,20 +50,23 @@ $MYNAME: generate system documentation information
 usage:  $MYNAME [<options>]
 
 options:
-  --conf | -c <file>        main Autodoc configuration file
+  --conf | -c <file>        Autodoc configuration file
                             default: "$MYCONF"
+  --template | -t <file>    Autodoc documentation template file
+                            default: "$MYTEMPLATE"
   --scripts | -s <dir>      additional Autodoc scripts directory
                             default: "$MYSCRIPTS"
-  --tag | -t <string>       only process lines containing <string>,
+  --tag | -T <string>       only process lines containing <string>,
                             or scripts named like <string>
 
-  --directory | -d  <dir>   (temp.) storage location for Autodoc documents
-                            (default e.g. "$DST")
+  --workdir | -w  <dir>     temporary storage location for Autodoc documents
+                            (default: auto-generated below $TMPDIR)
   --keep | -k               keep generated documents after packaging
   --no-keep | -K
+  --browse | -b             browse generated documentation (implies --keep)
+
   --inline | -i  <num>      inline output of <num> lines at most
                             (default: $OPT_INCLUDE)
-  --browse | -b             browse generated documentation (implies --keep)
 
 storage options:
   --output | -o <file>      storage location for Autodoc output archive
@@ -127,7 +132,7 @@ while [ -n "$1" ]; do
   elif [ "$1" =  "--browse" ] || [ "$1" = -"b" ]; then
     OPT_BROWSE=1
     OPT_KEEP=1
-  elif [ "$1" = "--tag" ] || [ "$1" = "-t" ]; then
+  elif [ "$1" = "--tag" ] || [ "$1" = "-T" ]; then
     shift
     TAG="$1"
   elif [ "$1" = "--url" ] || [ "$1" = "-u" ]; then
@@ -137,17 +142,24 @@ while [ -n "$1" ]; do
     OPT_KEEP=1
   elif [ "$1" = "--no-keep" ] || [ "$1" = "-K" ]; then
     OPT_KEEP=0
-  elif [ "$1" = "--directory" ] || [ "$1" = "-d" ]; then
+  elif [ "$1" = "--workdir" ] || [ "$1" = "-w" ]; then
+    # possible problems with automated cleanup. scary.
+    echo "error: not implemented. aborting." 1>&2
+    exit 1
+
     shift
     if [ -n "$1" ] && [ -d "$1" ]; then
-      DSTDIR="$1"
+      MYWORK="$1"
     else
-      echo "error: no such destination directory \"$1\". aborting."
+      echo "error: no such working directory \"$1\". aborting." 1>&2
       exit 1
     fi
   elif [ "$1" = "--conf" ] || [ "$1" = "-c" ]; then
     shift
     MYCONF="$1"
+  elif [ "$1" = "--template" ] || [ "$1" = "-t" ]; then
+    shift
+    MYTEMPLATE="$1"
   elif [ "$1" = "-o-" ]; then
     DSTFILE=/dev/stdout
   elif [ "$1" = "--output" ] || [ "$1" = "-o" ]; then
@@ -162,8 +174,13 @@ done
 
 # preparations
 
-if [ ! -f "$MYCONF" ]; then
-  echo "error: no such configuration file \"$MYCONF\". aborting."
+if [ -r "$MYCONF" ]; then
+  Debug "reading configuration file \"$MYCONF\"."
+  . "$MYCONF"
+fi
+
+if [ ! -f "$MYTEMPLATE" ]; then
+  echo "error: no such configuration file \"$MYTEMPLATE\". aborting."
   exit 1
 fi
 
@@ -172,9 +189,22 @@ if [ $OPT_INCLUDE -ne 0 ] && [ ! -x "$RECODE" ]; then
   OPT_INCLUDE=0
 fi
 
-install -d "$MYOUT"
-Debug MYOUT "$MYOUT"
-cd "$MYOUT" || exit 1
+if [ -z "$MYWORK" ]; then
+  MYWORK=$(mktemp -t -q -d "$MYNAME.$(date +%Y-%m-%d).XXXXXX")
+  install -d "$MYWORK"
+elif [ ! -d "$MYWORK" ]; then
+  echo "error: no such working directory \"$MYWORK\". aborting." 1>&2
+  exit 1
+elif [ ! -w "$MYWORK" ]; then
+  echo "error: no write permissions for working directory \"$MYWORK\". aborting." 1>&2
+  exit 1
+fi
+
+cd "$MYWORK"
+if [ $? -ne 0 ]; then
+  echo "error: could not access working directory. aborting." 1>&2
+  exit 1
+fi
 
 #
 # generate Autodocs, write index file
@@ -257,7 +287,7 @@ while read LINE; do
   else
     echo "warning: no such readable file or unknown directive: $A" 1>&2
   fi
-done < "$MYCONF"
+done < "$MYTEMPLATE"
 
 # process any additional Autodoc scripts in autodoc.d directory
 Debug MYSCRIPTS "$MYSCRIPTS"
@@ -286,12 +316,16 @@ if [ $OPT_BROWSE -ne 0 ] && [ -r "$INDEX" ]; then
 fi
 
 # create archive from results
-MYARCH=$MYOUT.tar.bz2
-tar -caf "$MYARCH" -C "$MYOUT" .
+MYARCH=$MYWORK.tar.bz2
+tar -caf "$MYARCH" -C "$MYWORK" .
 if [ $? -ne 0 ]; then
   echo "error: could not create data archive." 1>&2
   exit 1
 fi
+echo "$MYARCH"
+
+# jump back to initial shell working directory
+cd -
 
 # upload archive to web service/URL
 if [ -n "$URL" ]; then
@@ -306,21 +340,18 @@ if [ -n "$URL" ]; then
   fi
 fi
 
-# store archive in directory
-if [ -n "$DST" ]; then
-  if [ -d "$DST" ]; then
-    Debug "storing data to \"$DST\""
-    cp -p "$MYARCH" "$DST"
-    if [ $? -ne 0 ]; then
-      echo "error: data storage failed." 1>&2
-    fi
-  else
-    echo "error: no such storage directory \"$DST\"."
+# store archive file
+if [ -n "$DSTFILE" ]; then
+  Debug "storing data to \"$DSTFILE\""
+  cp -p "$MYARCH" "$DSTFILE"/
+  if [ $? -ne 0 ]; then
+    echo "error: data storage failed." 1>&2
   fi
 fi
 
 # delete temporary Autodoc files
 if [ $OPT_KEEP -eq 0 ]; then
-  Debug "removing Autodoc files in temp directory \"$MYOUT\""
-  find "$MYOUT/" -type f -mtime -5 -maxdepth 1 -print
+  Debug "removing Autodoc files in temp directory \"$MYWORK\""
+  #  find "$MYWORK/" -type f -mtime -5 -maxdepth 1 -print
+  echo rm -rf -- "$MYWORK"
 fi

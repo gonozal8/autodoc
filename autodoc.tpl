@@ -61,7 +61,7 @@
 /usr/bin/snap list
 /usr/bin/sudo /usr/bin/snap refresh --list
 # YUM Sources
-/usr/bin/yum grouplist
+#/usr/bin/yum grouplist
 /usr/bin/yum repolist
 # APT Sources
 /etc/apt/sources.list
@@ -82,9 +82,9 @@
 /etc/suse-release
 
 ## OS Installation Configuration
-/root/anaconda-ks.cfg
-/root/initial-setup-ks.cfg
-/root/original-ks.cfg
+/usr/bin/sudo cat /root/anaconda-ks.cfg
+/usr/bin/sudo cat /root/initial-setup-ks.cfg
+/usr/bin/sudo cat /root/original-ks.cfg
 
 ## System Services
 /usr/bin/systemctl list-unit-files
