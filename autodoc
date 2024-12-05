@@ -44,78 +44,78 @@ BROWSER=google-chrome
 RECODE=/usr/bin/recode
 
 function Help () {
-  cat -<<EOF
+	cat -<<EOF
 $MYNAME: generate system documentation information
 
 usage:  $MYNAME [<options>]
 
 options:
-  --conf | -c <file>        Autodoc configuration file
-                            default: "$MYCONF"
-  --template | -t <file>    Autodoc documentation template file
-                            default: "$MYTEMPLATE"
-  --scripts | -s <dir>      additional Autodoc scripts directory
-                            default: "$MYSCRIPTS"
-  --tag | -T <string>       only process lines containing <string>,
-                            or scripts named like <string>
+	--conf | -c <file>        Autodoc configuration file
+														default: "$MYCONF"
+	--template | -t <file>    Autodoc documentation template file
+														default: "$MYTEMPLATE"
+	--scripts | -s <dir>      additional Autodoc scripts directory
+														default: "$MYSCRIPTS"
+	--tag | -T <string>       only process lines containing <string>,
+														or scripts named like <string>
 
-  --workdir | -w  <dir>     temporary storage location for Autodoc documents
-                            (default: auto-generated below $TMPDIR)
-  --keep | -k               keep generated documents after packaging
-  --no-keep | -K
-  --browse | -b             browse generated documentation (implies --keep)
+	--workdir | -w  <dir>     temporary storage location for Autodoc documents
+														(default: auto-generated below $TMPDIR)
+	--keep | -k               keep generated documents after packaging
+	--no-keep | -K
+	--browse | -b             browse generated documentation (implies --keep)
 
-  --inline | -i  <num>      inline output of <num> lines at most
-                            (default: $OPT_INCLUDE)
+	--inline | -i  <num>      inline output of <num> lines at most
+														(default: $OPT_INCLUDE)
 
 storage options:
-  --output | -o <file>      storage location for Autodoc output archive
-                            default: "$DSTFILE"
-                            (use "/dev/stdout" or "-" for stdout)
-  --url | -u <URL>          upload destination for Autodoc output archive
-                            default: "$URL"
+	--output | -o <file>      storage location for Autodoc output archive
+														default: "$DSTFILE"
+														(use "/dev/stdout" or "-" for stdout)
+	--url | -u <URL>          upload destination for Autodoc output archive
+														default: "$URL"
 EOF
-  exit $?
+	exit $?
 }
 
 function Debug () {
-  [ $OPT_DEBUG -ne 0 ] && echo debug: "$*"
+	[ $OPT_DEBUG -ne 0 ] && echo debug: "$*"
 }
 
 # process a single command
 function ProcessCommand () {
-    local A
-    local LINE
-    local OUTPUT
+	local A
+	local LINE
+	local OUTPUT
 
-    A=$(echo "$1" | cut -f1 -d " ")
-    LINE="$1"
-    # define output file name, replacing illegal character(s)
-    OUTPUT=$(echo "$LINE" | sed -e 's#/#_#g').txt
-    #OUTPUT=$(basename "$A")
-    Debug "OUTPUT ${OUTPUT}"
-    # shortened label for display purposes (strip common directory names)
-    LABEL=$(echo "$LINE" | sed -e 's#^/usr/s\?bin/##')
+	A=$(echo "$1" | cut -f1 -d " ")
+	LINE="$1"
+	# define output file name, replacing illegal character(s)
+	OUTPUT=$(echo "$LINE" | sed -e 's#/#_#g').txt
+	#OUTPUT=$(basename "$A")
+	Debug "OUTPUT ${OUTPUT}"
+	# shortened label for display purposes (strip common directory names)
+	LABEL=$(echo "$LINE" | sed -e 's#^/usr/s\?bin/##')
 
-    TIME1=$(date +%s)
-    eval "$LINE" > "$OUTPUT" 2>&1
-    RESULT=$?
-    TIME2=$(date +%s)
-    TIME=$((TIME2 - TIME1))
-    SIZE=$(stat --printf="%s" "$OUTPUT")
-    TYPE=$(file --mime-type --brief "$OUTPUT")
-    if [ "${TYPE:0:4}" = "text" ]; then
-      LINES=$(wc -l "$OUTPUT" | cut -f1 -d " ")
-    else
-      LINES=0
-    fi
-    
-    echo "<li><a href=\"$OUTPUT\"><code class=\"command\">\$ $LABEL</code></a> (exit $RESULT, $TIME seconds, $SIZE bytes, $LINES lines)" >> $INDEX
-    if [ $OPT_INCLUDE -ne 0 ] && [ "$LINES" -eq 1 ]; then
-      echo "<br/><code class=\"output\">" >> $INDEX
-      cat -- "$OUTPUT" | recode ascii..html >> $INDEX
-      echo "</CODE>" >> $INDEX
-    fi
+	TIME1=$(date +%s)
+	eval "$LINE" > "$OUTPUT" 2>&1
+	RESULT=$?
+	TIME2=$(date +%s)
+	TIME=$((TIME2 - TIME1))
+	SIZE=$(stat --printf="%s" "$OUTPUT")
+	TYPE=$(file --mime-type --brief "$OUTPUT")
+	if [ "${TYPE:0:4}" = "text" ]; then
+		LINES=$(wc -l "$OUTPUT" | cut -f1 -d " ")
+	else
+		LINES=0
+	fi
+
+	echo "<li><a href=\"$OUTPUT\"><code class=\"command\">\$ $LABEL</code></a> (exit $RESULT, $TIME seconds, $SIZE bytes, $LINES lines)" >> $INDEX
+	if [ $OPT_INCLUDE -ne 0 ] && [ "$LINES" -eq 1 ]; then
+		echo "<br/><code class=\"output\">" >> $INDEX
+		cat -- "$OUTPUT" | recode ascii..html >> $INDEX
+		echo "</CODE>" >> $INDEX
+	fi
 }
 
 #
@@ -125,85 +125,85 @@ function ProcessCommand () {
 # parse command line arguments
 
 while [ -n "$1" ]; do
-  if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
-    Help 0
-  elif [ "$1" = "--debug" ] || [ "$1" = "-d" ]; then
-    OPT_DEBUG=1
-  elif [ "$1" =  "--browse" ] || [ "$1" = -"b" ]; then
-    OPT_BROWSE=1
-    OPT_KEEP=1
-  elif [ "$1" = "--tag" ] || [ "$1" = "-T" ]; then
-    shift
-    TAG="$1"
-  elif [ "$1" = "--url" ] || [ "$1" = "-u" ]; then
-    shift
-    URL="$1"
-  elif [ "$1" = "--keep" ] || [ "$1" = "-k" ]; then
-    OPT_KEEP=1
-  elif [ "$1" = "--no-keep" ] || [ "$1" = "-K" ]; then
-    OPT_KEEP=0
-  elif [ "$1" = "--workdir" ] || [ "$1" = "-w" ]; then
-    # possible problems with automated cleanup. scary.
-    echo "error: not implemented. aborting." 1>&2
-    exit 1
+	if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+		Help 0
+	elif [ "$1" = "--debug" ] || [ "$1" = "-d" ]; then
+		OPT_DEBUG=1
+	elif [ "$1" =  "--browse" ] || [ "$1" = -"b" ]; then
+		OPT_BROWSE=1
+		OPT_KEEP=1
+	elif [ "$1" = "--tag" ] || [ "$1" = "-T" ]; then
+		shift
+		TAG="$1"
+	elif [ "$1" = "--url" ] || [ "$1" = "-u" ]; then
+		shift
+		URL="$1"
+	elif [ "$1" = "--keep" ] || [ "$1" = "-k" ]; then
+		OPT_KEEP=1
+	elif [ "$1" = "--no-keep" ] || [ "$1" = "-K" ]; then
+		OPT_KEEP=0
+	elif [ "$1" = "--workdir" ] || [ "$1" = "-w" ]; then
+		# possible problems with automated cleanup. scary.
+		echo "error: not implemented. aborting." 1>&2
+		exit 1
 
-    shift
-    if [ -n "$1" ] && [ -d "$1" ]; then
-      MYWORK="$1"
-    else
-      echo "error: no such working directory \"$1\". aborting." 1>&2
-      exit 1
-    fi
-  elif [ "$1" = "--conf" ] || [ "$1" = "-c" ]; then
-    shift
-    MYCONF="$1"
-  elif [ "$1" = "--template" ] || [ "$1" = "-t" ]; then
-    shift
-    MYTEMPLATE="$1"
-  elif [ "$1" = "-o-" ]; then
-    DSTFILE=/dev/stdout
-  elif [ "$1" = "--output" ] || [ "$1" = "-o" ]; then
-    shift
-    DSTFILE="$1"
-    [ "$DSTFILE" = "-" ] && DSTFILE=/dev/stdout
-  else
-    Help 1
-  fi
-  shift
+		shift
+		if [ -n "$1" ] && [ -d "$1" ]; then
+			MYWORK="$1"
+		else
+			echo "error: no such working directory \"$1\". aborting." 1>&2
+			exit 1
+		fi
+	elif [ "$1" = "--conf" ] || [ "$1" = "-c" ]; then
+		shift
+		MYCONF="$1"
+	elif [ "$1" = "--template" ] || [ "$1" = "-t" ]; then
+		shift
+		MYTEMPLATE="$1"
+	elif [ "$1" = "-o-" ]; then
+		DSTFILE=/dev/stdout
+	elif [ "$1" = "--output" ] || [ "$1" = "-o" ]; then
+		shift
+		DSTFILE="$1"
+		[ "$DSTFILE" = "-" ] && DSTFILE=/dev/stdout
+	else
+		Help 1
+	fi
+	shift
 done
 
 # preparations
 
 if [ -r "$MYCONF" ]; then
-  Debug "reading configuration file \"$MYCONF\"."
-  . "$MYCONF"
+	Debug "reading configuration file \"$MYCONF\"."
+	. "$MYCONF"
 fi
 
 if [ ! -f "$MYTEMPLATE" ]; then
-  echo "error: no such configuration file \"$MYTEMPLATE\". aborting."
-  exit 1
+	echo "error: no such configuration file \"$MYTEMPLATE\". aborting."
+	exit 1
 fi
 
 if [ $OPT_INCLUDE -ne 0 ] && [ ! -x "$RECODE" ]; then
-  echo "warning: recode binary not found. disabling includes." 1>&2
-  OPT_INCLUDE=0
+	echo "warning: recode binary not found. disabling includes." 1>&2
+	OPT_INCLUDE=0
 fi
 
 if [ -z "$MYWORK" ]; then
-  MYWORK=$(mktemp -t -q -d "$MYNAME.$(date +%Y-%m-%d).XXXXXX")
-  install -d "$MYWORK"
+	MYWORK=$(mktemp -t -q -d "$MYNAME.$(date +%Y-%m-%d).XXXXXX")
+	install -d "$MYWORK"
 elif [ ! -d "$MYWORK" ]; then
-  echo "error: no such working directory \"$MYWORK\". aborting." 1>&2
-  exit 1
+	echo "error: no such working directory \"$MYWORK\". aborting." 1>&2
+	exit 1
 elif [ ! -w "$MYWORK" ]; then
-  echo "error: no write permissions for working directory \"$MYWORK\". aborting." 1>&2
-  exit 1
+	echo "error: no write permissions for working directory \"$MYWORK\". aborting." 1>&2
+	exit 1
 fi
 
 cd "$MYWORK"
 if [ $? -ne 0 ]; then
-  echo "error: could not access working directory. aborting." 1>&2
-  exit 1
+	echo "error: could not access working directory. aborting." 1>&2
+	exit 1
 fi
 
 #
@@ -218,10 +218,10 @@ cat > $INDEX <<-EOF
 <head>
 <title>Autodoc Report: $MYHOST</title>
 <style>
-  body { font-family: Tahoma, Verdana, Segoe, sans-serif; }
-  code { font-size: 1.2em; }
-  a { text-decoration: none; }
-  a:hover { text-decoration: underline; }
+body { font-family: Tahoma, Verdana, Segoe, sans-serif; }
+code { font-size: 1.2em; }
+a { text-decoration: none; }
+a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -235,71 +235,71 @@ EOF
 IFS="
 "
 while read LINE; do
-  A=$(echo "$LINE" | cut -f1 -d " ")
-  Debug LINE "$LINE"
-  Debug A "$A"
+	A=$(echo "$LINE" | cut -f1 -d " ")
+	Debug LINE "$LINE"
+	Debug A "$A"
 
-  if [ "${LINE:0:2}" = "##" ]; then
-    echo "</ul><h2>${LINE:2}</h2><ul>" >> $INDEX
-    continue
-  elif [ "${LINE:0:1}" = "#" ]; then
-    continue
-  fi
-  if [ -n "$TAG" ]; then
-    # skip current line if not tagged according to requested filter
-    echo "$A" | grep -q "$TAG" || continue
-  fi
+	if [ "${LINE:0:2}" = "##" ]; then
+		echo "</ul><h2>${LINE:2}</h2><ul>" >> $INDEX
+		continue
+	elif [ "${LINE:0:1}" = "#" ]; then
+		continue
+	fi
+	if [ -n "$TAG" ]; then
+		# skip current line if not tagged according to requested filter
+		echo "$A" | grep -q "$TAG" || continue
+	fi
 
-  # process single line according to its type
-  if [ -z "$A" ]; then
-    continue
-  elif [ -d "$A" ]; then
-    # dir found: store a backup
-    OUT=$(echo "$LINE" | sed -e 's#/#_#g').tar.bz2
-    tar -cjPf "$OUT" -- "$A"
-    SIZE=$(stat --printf="%s" "$OUT")
-    echo "<li><code class=\"filename\">$A</code> (archive: $SIZE bytes)" >> $INDEX
-  elif [ -x "$A" ]; then
-    # executable found: execute and store its output
-    ProcessCommand "$LINE"
-  elif [ -r "$A" ]; then
-    # file found: store a copy
-    cp -p --force "$A" .
-    LINK=$(basename "$A")
-    PERMS=$(stat --format="%a %U:%G" "$A")
-    MTIME=$(date -d "@$(stat --format="%Y" "$A")" +"%Y-%m-%d %H:%M")
-    # SIZE and TYPE determination does not work for /proc filesystem.
-    # let's just use the copied file to be on the safe side.
-    SIZE=$(stat --printf="%s" "$LINK")
-    TYPE=$(file --mime-type --brief "$LINK")
-    if [ "${TYPE:0:4}" = "text" ]; then
-      LINES=$(wc -l "$LINK" | cut -f1 -d " ")
-    else
-      LINES=0
-    fi
-    echo "<li><a href=\"$LINK\"><code class=\"filename\">$A</code></a> ($MTIME, $PERMS, $SIZE bytes, $LINES lines)" >> $INDEX
-    if [ $OPT_INCLUDE -ne 0 ] && [ "$LINES" -eq 1 ]; then
-      # shellcheck disable=SC2129
-      echo "<br/><code class=\"content\">" >> $INDEX
-      cat -- "$A" | recode ascii..html >> $INDEX
-      echo "</CODE>" >> $INDEX
-    fi
-  else
-    echo "warning: no such readable file or unknown directive: $A" 1>&2
-  fi
+	# process single line according to its type
+	if [ -z "$A" ]; then
+		continue
+	elif [ -d "$A" ]; then
+		# dir found: store a backup
+		OUT=$(echo "$LINE" | sed -e 's#/#_#g').tar.bz2
+		tar -cjPf "$OUT" -- "$A"
+		SIZE=$(stat --printf="%s" "$OUT")
+		echo "<li><code class=\"filename\">$A</code> (archive: $SIZE bytes)" >> $INDEX
+	elif [ -x "$A" ]; then
+		# executable found: execute and store its output
+		ProcessCommand "$LINE"
+	elif [ -r "$A" ]; then
+		# file found: store a copy
+		cp -p --force "$A" .
+		LINK=$(basename "$A")
+		PERMS=$(stat --format="%a %U:%G" "$A")
+		MTIME=$(date -d "@$(stat --format="%Y" "$A")" +"%Y-%m-%d %H:%M")
+		# SIZE and TYPE determination does not work for /proc filesystem.
+		# let's just use the copied file to be on the safe side.
+		SIZE=$(stat --printf="%s" "$LINK")
+		TYPE=$(file --mime-type --brief "$LINK")
+		if [ "${TYPE:0:4}" = "text" ]; then
+			LINES=$(wc -l "$LINK" | cut -f1 -d " ")
+		else
+			LINES=0
+		fi
+		echo "<li><a href=\"$LINK\"><code class=\"filename\">$A</code></a> ($MTIME, $PERMS, $SIZE bytes, $LINES lines)" >> $INDEX
+		if [ $OPT_INCLUDE -ne 0 ] && [ "$LINES" -eq 1 ]; then
+			# shellcheck disable=SC2129
+			echo "<br/><code class=\"content\">" >> $INDEX
+			cat -- "$A" | recode ascii..html >> $INDEX
+			echo "</CODE>" >> $INDEX
+		fi
+	else
+		echo "warning: no such readable file or unknown directive: $A" 1>&2
+	fi
 done < "$MYTEMPLATE"
 
 # process any additional Autodoc scripts in autodoc.d directory
 Debug MYSCRIPTS "$MYSCRIPTS"
 if [ -n "$MYSCRIPTS" ] && [ -d "$MYSCRIPTS" ]; then
-  for F in $(find "$MYSCRIPTS" -type f); do
-    if [ -x "$F" ]; then
-      # skip current script if not tagged according to requested filter
-      echo "$F" | grep -q "$TAG" || continue
-      Debug Script "$F"
-      ProcessCommand "$F"
-    fi
-  done
+	for F in $(find "$MYSCRIPTS" -type f); do
+		if [ -x "$F" ]; then
+			# skip current script if not tagged according to requested filter
+			echo "$F" | grep -q "$TAG" || continue
+			Debug Script "$F"
+			ProcessCommand "$F"
+		fi
+	done
 fi
 
 # index footer
@@ -311,16 +311,16 @@ echo "</ul><hr/>Created by $MYNAME on $MYTIME</body></html>" >> $INDEX
 
 # open index of results
 if [ $OPT_BROWSE -ne 0 ] && [ -r "$INDEX" ]; then
-  Debug "opening index of results"
-  $BROWSER "$INDEX"
+	Debug "opening index of results"
+	$BROWSER "$INDEX"
 fi
 
 # create archive from results
 MYARCH=$MYWORK.tar.bz2
 tar -caf "$MYARCH" -C "$MYWORK" .
 if [ $? -ne 0 ]; then
-  echo "error: could not create data archive." 1>&2
-  exit 1
+	echo "error: could not create data archive." 1>&2
+	exit 1
 fi
 echo "$MYARCH"
 
@@ -329,29 +329,29 @@ cd -
 
 # upload archive to web service/URL
 if [ -n "$URL" ]; then
-  Debug "uploading data to $URL"
-  Debug MYARCH "$MYARCH"
-  ls -Flad "$MYARCH"
-  curl -X POST \
-  -H "host: $MYHOST" \
-  --data-binary @"$MYARCH" "$URL"
-  if [ $? -ne 0 ]; then
-    echo "error: data upload failed." 1>&2
-  fi
+	Debug "uploading data to $URL"
+	Debug MYARCH "$MYARCH"
+	ls -Flad "$MYARCH"
+	curl -X POST \
+	-H "host: $MYHOST" \
+	--data-binary @"$MYARCH" "$URL"
+	if [ $? -ne 0 ]; then
+		echo "error: data upload failed." 1>&2
+	fi
 fi
 
 # store archive file
 if [ -n "$DSTFILE" ]; then
-  Debug "storing data to \"$DSTFILE\""
-  cp -p "$MYARCH" "$DSTFILE"/
-  if [ $? -ne 0 ]; then
-    echo "error: data storage failed." 1>&2
-  fi
+	Debug "storing data to \"$DSTFILE\""
+	cp -p "$MYARCH" "$DSTFILE"/
+	if [ $? -ne 0 ]; then
+		echo "error: data storage failed." 1>&2
+	fi
 fi
 
 # delete temporary Autodoc files
 if [ $OPT_KEEP -eq 0 ]; then
-  Debug "removing Autodoc files in temp directory \"$MYWORK\""
-  #  find "$MYWORK/" -type f -mtime -5 -maxdepth 1 -print
-  echo rm -rf -- "$MYWORK"
+	Debug "removing Autodoc files in temp directory \"$MYWORK\""
+	#  find "$MYWORK/" -type f -mtime -5 -maxdepth 1 -print
+	echo rm -rf -- "$MYWORK"
 fi
