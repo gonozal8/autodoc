@@ -28,7 +28,7 @@ MYSCRIPTS="${MYPATH}.d"
 # temporary storage directory for results
 # (this needs to be a (sub)directory used by Autodoc only.
 # do not use a system-wide temp directory e.g. /tmp)
-MYOUT="/var/tmp/$MYNAME"
+##MYOUT="/var/tmp/$MYNAME"
 
 # final destination for results
 #URL=https://localhost/autodoc
@@ -176,6 +176,7 @@ done
 
 if [ -r "$MYCONF" ]; then
 	Debug "reading configuration file \"$MYCONF\"."
+	# shellcheck disable=SC1090
 	. "$MYCONF"
 fi
 
@@ -200,6 +201,7 @@ elif [ ! -w "$MYWORK" ]; then
 	exit 1
 fi
 
+# shellcheck disable=SC2164
 cd "$MYWORK"
 if [ $? -ne 0 ]; then
 	echo "error: could not access working directory. aborting." 1>&2
@@ -255,7 +257,8 @@ while read LINE; do
 		continue
 	elif [ -d "$A" ]; then
 		# dir found: store a backup
-		OUT=$(echo "$LINE" | sed -e 's#/#_#g').tar.bz2
+		#OUT=$(echo "$LINE" | sed -e 's#/#_#g').tar.bz2
+		OUT=${LINE//\//_}.tar.bz2
 		tar -cjPf "$OUT" -- "$A"
 		SIZE=$(stat --printf="%s" "$OUT")
 		echo "<li><code class=\"filename\">$A</code> (archive: $SIZE bytes)" >> $INDEX
@@ -292,13 +295,11 @@ done < "$MYTEMPLATE"
 # process any additional Autodoc scripts in autodoc.d directory
 Debug MYSCRIPTS "$MYSCRIPTS"
 if [ -n "$MYSCRIPTS" ] && [ -d "$MYSCRIPTS" ]; then
-	for F in $(find "$MYSCRIPTS" -type f); do
-		if [ -x "$F" ]; then
-			# skip current script if not tagged according to requested filter
-			echo "$F" | grep -q "$TAG" || continue
-			Debug Script "$F"
-			ProcessCommand "$F"
-		fi
+	find "$MYSCRIPTS" -type f -executable | while IFS= read -r F; do
+		# skip current script if not tagged according to requested filter
+		echo "$F" | grep -q "$TAG" || continue
+		Debug Script "$F"
+		ProcessCommand "$F"
 	done
 fi
 
@@ -325,7 +326,12 @@ fi
 echo "$MYARCH"
 
 # jump back to initial shell working directory
+# shellcheck disable=SC2164,SC2103
 cd -
+if [ $? -ne 0 ]; then
+	echo "error: could not access working directory. aborting." 1>&2
+	exit 1
+fi
 
 # upload archive to web service/URL
 if [ -n "$URL" ]; then
