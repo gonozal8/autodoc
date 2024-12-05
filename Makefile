@@ -1,7 +1,7 @@
 default:
 
 shellcheck:
-	shellcheck -S info -e SC2181 autodoc
+	shellcheck -S info autodoc
 
 autodoc.rpm:
 	fpm -s dir -t rpm --name autodoc --version 0.3 \
