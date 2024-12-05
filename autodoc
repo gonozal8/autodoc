@@ -50,30 +50,30 @@ $MYNAME: generate system documentation information
 usage:  $MYNAME [<options>]
 
 options:
-	--conf | -c <file>        Autodoc configuration file
-														default: "$MYCONF"
+	--conf | -c     <file>    Autodoc configuration file
+	                          default: "$MYCONF"
 	--template | -t <file>    Autodoc documentation template file
-														default: "$MYTEMPLATE"
-	--scripts | -s <dir>      additional Autodoc scripts directory
-														default: "$MYSCRIPTS"
-	--tag | -T <string>       only process lines containing <string>,
-														or scripts named like <string>
+	                          default: "$MYTEMPLATE"
+	--scripts | -s   <dir>    additional Autodoc scripts directory
+	                          default: "$MYSCRIPTS"
+	--tag | -T    <string>    only process lines containing <string>,
+	                          or scripts named like <string>
 
-	--workdir | -w  <dir>     temporary storage location for Autodoc documents
-														(default: auto-generated below $TMPDIR)
-	--keep | -k               keep generated documents after packaging
+	--workdir | -w   <dir>    temporary storage location for Autodoc documents
+	                          (default: auto-generated below $TMPDIR)
+	--keep    | -k            keep generated documents after packaging
 	--no-keep | -K
-	--browse | -b             browse generated documentation (implies --keep)
+	--browse  | -b            browse generated documentation (implies --keep)
 
-	--inline | -i  <num>      inline output of <num> lines at most
-														(default: $OPT_INCLUDE)
+	--inline  | -i   <num>    inline output of <num> lines at most
+	                          (default: $OPT_INCLUDE)
 
 storage options:
-	--output | -o <file>      storage location for Autodoc output archive
-														default: "$DSTFILE"
-														(use "/dev/stdout" or "-" for stdout)
-	--url | -u <URL>          upload destination for Autodoc output archive
-														default: "$URL"
+	--output | -o   <file>    storage location for Autodoc output archive
+	                          default: "$DSTFILE"
+	                          (use "/dev/stdout" or "-" for stdout)
+	--url    | -u    <URL>    upload destination for Autodoc output archive
+	                          default: "$URL"
 EOF
 	exit $?
 }
