@@ -298,6 +298,11 @@ if [ -n "$MYSCRIPTS" ] && [ -d "$MYSCRIPTS" ]; then
 	find "$MYSCRIPTS" -type f -executable | while IFS= read -r F; do
 		# skip current script if not tagged according to requested filter
 		echo "$F" | grep -q "$TAG" || continue
+		# skip scripts owned by other users for security reasons
+		U=$(stat --format="%U" "$F")
+		if [ "$U" != "$USER" ] && [ "$U" != "root" ]; then
+			echo "info: skipping script \"$F\" owned by user \"$U\"" 1>&2
+		fi
 		Debug Script "$F"
 		ProcessCommand "$F"
 	done
