@@ -21,9 +21,7 @@ MYHOST=$(hostname -s)
 MYTIME=$(date +"%Y-%m-%d %H:%M:%S")
 MYNAME=$(basename "$0")
 MYPATH=$(readlink -f "$0")
-MYCONF="${MYPATH}.conf"
-MYTEMPLATE="${MYPATH}.tpl"
-MYSCRIPTS="${MYPATH}.d"
+MYDIR=$(dirname "$MYPATH")
 
 # temporary storage directory for results
 # (this needs to be a (sub)directory used by Autodoc only.
@@ -42,6 +40,32 @@ OPT_KEEP=0
 BROWSER=xdg-open
 BROWSER=google-chrome
 RECODE=/usr/bin/recode
+
+# determine the location of the highest-priority config file to be used
+function MyFile () {
+	#echo MyFile "$1" "$2"
+	if [ -z "$2" ]; then
+		TEST="-f"
+	else
+		TEST="-d"
+	fi
+	# shellcheck disable=SC1073 disable=SC1072 disable=SC1009
+	if [ $TEST "$MYDIR/$1" ]; then
+		echo "$MYDIR/$1"
+	elif [ $TEST "$XDG_CONFIG_HOME/$MYNAME/$1" ]; then
+		echo "$XDG_CONFIG_HOME/$MYNAME/$1"
+	elif [ $TEST "$HOME/.config/$MYNAME/$1" ]; then
+		echo "$HOME/.config/$MYNAME/$1"
+	elif [ $TEST "$HOME/.${MYNAME}/$1" ]; then
+		echo "$HOME/.${MYNAME}/$1"
+	elif [ $TEST "/etc/$MYNAME/$1" ]; then
+		echo "/etc/$MYNAME/$1"
+	elif [ $TEST "/etc/$1" ]; then
+		echo "/etc/$1"
+	else
+		echo ""
+	fi
+}
 
 function Help () {
 	cat -<<EOF
@@ -122,6 +146,10 @@ function ProcessCommand () {
 # main()
 #
 
+MYCONF=$(MyFile "${MYNAME}.conf")
+MYTEMPLATE=$(MyFile "${MYNAME}.tpl")
+MYSCRIPTS=$(MyFile "${MYNAME}.d" d)
+
 # parse command line arguments
 
 while [ -n "$1" ]; do
@@ -181,7 +209,7 @@ if [ -r "$MYCONF" ]; then
 fi
 
 if [ ! -f "$MYTEMPLATE" ]; then
-	echo "error: no such configuration file \"$MYTEMPLATE\". aborting."
+	echo "error: no such template file \"$MYTEMPLATE\". aborting."
 	exit 1
 fi
 
